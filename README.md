@@ -3,10 +3,6 @@ A chatgpt generated ascii aquarium written in C#
 
 ## Example Videos
 
+https://github.com/snaphat/chatgpt_ascii_aquarium/assets/5836001/fbb56803-cb60-4c39-9091-147ce63ff993
 
-
-
-https://github.com/snaphat/chatgpt_ascii_aquarium/assets/5836001/8a5e4fe6-c7e4-4ca9-906b-922d46b7a8b8
-
-https://github.com/snaphat/chatgpt_ascii_aquarium/assets/5836001/1b7d6f40-1a35-42b6-a4c8-11c1a87d4a02
-
+https://github.com/snaphat/chatgpt_ascii_aquarium/assets/5836001/e96f5b04-6c84-43b9-890e-58a1886b4abc
