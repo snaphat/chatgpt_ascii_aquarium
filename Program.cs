@@ -50,7 +50,7 @@ class Program
         foreach (Bubble bubble in bubbles)
         {
             Console.SetCursorPosition(bubble.X, bubble.Y);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = bubble.Color;
             Console.Write(bubble.Symbol);
         }
     }
@@ -122,7 +122,9 @@ class Program
         {
             int x = random.Next(2, Console.WindowWidth - 2);
             int y = random.Next(2, Console.WindowHeight - 2);
-            Bubble bubble = new Bubble(x, y);
+            string bubbleSymbol = GenerateBubbleSymbol();
+            ConsoleColor color = (ConsoleColor)random.Next(1, 16);
+            Bubble bubble = new Bubble(x, y, bubbleSymbol, color);
             bubbles.Add(bubble);
         }
 
@@ -140,6 +142,18 @@ class Program
         }
 
         return updatedBubbles;
+    }
+
+    static string GenerateBubbleSymbol()
+    {
+        Random random = new Random();
+        int size = random.Next(1, 4);
+        string symbol = "";
+        for (int i = 0; i < size; i++)
+        {
+            symbol += "o";
+        }
+        return symbol;
     }
 }
 
@@ -220,12 +234,15 @@ class Bubble
 {
     public int X { get; }
     public int Y { get; private set; }
-    public string Symbol { get; } = "o";
+    public string Symbol { get; }
+    public ConsoleColor Color { get; }
 
-    public Bubble(int x, int y)
+    public Bubble(int x, int y, string symbol, ConsoleColor color)
     {
         X = x;
         Y = y;
+        Symbol = symbol;
+        Color = color;
     }
 
     public void Rise()
