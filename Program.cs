@@ -4,6 +4,11 @@ using System.Threading;
 
 class Program
 {
+    private static readonly Random Random = new Random();
+    private const int BorderBuffer = 2;
+    private const int FishBuffer = 12;
+    private const int BottomBuffer = 7;
+
     static void Main()
     {
         Console.CursorVisible = false;
@@ -16,11 +21,11 @@ class Program
 
         while (true)
         {
-            List<Fish> updatedFishesLeft = UpdateFishes(fishesLeft, true);
-            List<Fish> updatedFishesRight = UpdateFishes(fishesRight, false);
-            List<Bubble> updatedBubbles = UpdateBubbles(bubbles);
+            UpdateFishes(fishesLeft, true);
+            UpdateFishes(fishesRight, false);
+            UpdateBubbles(bubbles);
 
-            DrawAquarium(updatedFishesLeft, updatedFishesRight, updatedBubbles);
+            DrawAquarium(fishesLeft, fishesRight, bubbles);
 
             Thread.Sleep(100);
         }
@@ -100,17 +105,12 @@ class Program
         };
     }
 
-    static List<Fish> UpdateFishes(List<Fish> fishes, bool moveLeft)
+    static void UpdateFishes(List<Fish> fishes, bool moveLeft)
     {
-        List<Fish> updatedFishes = new List<Fish>();
-
         foreach (Fish fish in fishes)
         {
             fish.Move(moveLeft);
-            updatedFishes.Add(fish);
         }
-
-        return updatedFishes;
     }
 
     static List<Bubble> GenerateBubbles()
@@ -143,17 +143,10 @@ class Program
 
         return updatedBubbles;
     }
-
     static string GenerateBubbleSymbol()
     {
-        Random random = new Random();
-        int size = random.Next(1, 4);
-        string symbol = "";
-        for (int i = 0; i < size; i++)
-        {
-            symbol += "o";
-        }
-        return symbol;
+        int size = Random.Next(1, 4);
+        return new string('o', size);
     }
 }
 
