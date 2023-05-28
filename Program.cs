@@ -20,15 +20,16 @@ class Program
         List<Fish> fishesLeft = GenerateFishes(true);
         List<Fish> fishesRight = GenerateFishes(false);
         List<Bubble> bubbles = GenerateBubbles();
+        List<SeaPlant> seaPlants = GenerateSeaPlants(BottomBuffer);
 
-        // Draw the aquarium once at the beginning
-        DrawAquarium(fishesLeft, fishesRight, bubbles);
+        DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants);
 
         while (true)
         {
             UpdateAndRedrawFishes(fishesLeft, true);
             UpdateAndRedrawFishes(fishesRight, false);
             UpdateAndRedrawBubbles(bubbles);
+            DrawSeaPlants(seaPlants);
 
             Thread.Sleep(50);
         }
@@ -89,6 +90,28 @@ class Program
                 Console.SetCursorPosition(x + i, y);
                 Console.Write(' ');
             }
+            else if (y == seaFloorStart)
+            {
+                // If on the sea floor, don't clear '|'
+                if (Console.CursorLeft != '|')
+                {
+                    Console.SetCursorPosition(x + i, y);
+                    Console.Write(' ');
+                }
+            }
+        }
+    }
+
+    static void DrawSeaPlants(List<SeaPlant> seaPlants)
+    {
+        foreach (SeaPlant seaPlant in seaPlants)
+        {
+            for (int j = 0; j < seaPlant.Height; j++)
+            {
+                Console.SetCursorPosition(seaPlant.X, seaPlant.Y - j);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("|");
+            }
         }
     }
 
@@ -107,7 +130,7 @@ class Program
         Console.Write(bubble.Symbol);
     }
 
-    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles)
+    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants)
     {
         Console.Clear();
 
@@ -127,6 +150,7 @@ class Program
         }
 
         DrawSeaFloor();
+        DrawSeaPlants(seaPlants);
     }
 
     static List<Fish> GenerateFishes(bool moveLeft)
@@ -201,6 +225,21 @@ class Program
         return bubbles;
     }
 
+    static List<SeaPlant> GenerateSeaPlants(int bottomBuffer)
+    {
+        Random random = new Random();
+        List<SeaPlant> seaPlants = new List<SeaPlant>();
+        int seaFloorStart = Console.WindowHeight - bottomBuffer;
+
+        for (int i = 0; i < Console.WindowWidth; i += random.Next(2, 10))
+        {
+            int plantHeight = random.Next(2, 7);
+            seaPlants.Add(new SeaPlant(i, seaFloorStart, plantHeight));
+        }
+
+        return seaPlants;
+    }
+
     static List<Bubble> UpdateBubbles(List<Bubble> bubbles)
     {
         List<Bubble> updatedBubbles = new List<Bubble>();
@@ -217,6 +256,20 @@ class Program
     {
         int size = Random.Next(1, 4);
         return new string('o', size);
+    }
+}
+
+class SeaPlant
+{
+    public int X { get; }
+    public int Y { get; }
+    public int Height { get; }
+
+    public SeaPlant(int x, int y, int height)
+    {
+        X = x;
+        Y = y;
+        Height = height;
     }
 }
 
