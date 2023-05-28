@@ -2,6 +2,7 @@
 A chatgpt generated ascii aquarium written in C#
 
 ## Example Videos
+https://github.com/snaphat/chatgpt_ascii_aquarium/assets/5836001/c2b37761-781c-472b-be47-88c6b1fc0122
 
 https://github.com/snaphat/chatgpt_ascii_aquarium/assets/5836001/fbb56803-cb60-4c39-9091-147ce63ff993
 
