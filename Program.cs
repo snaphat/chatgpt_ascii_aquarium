@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 
 class Program
@@ -27,26 +28,44 @@ class Program
 
         while (true)
         {
-            if (WindowWidth != Console.WindowWidth || WindowHeight != Console.WindowHeight)
+            if (Console.WindowWidth < 1 || Console.WindowHeight < 1)
             {
-                WindowWidth = Console.WindowWidth;
-                WindowHeight = Console.WindowHeight;
-                SeaFloorDrawn = false; // reset SeaFloorDrawn flag
-                fishesLeft = GenerateFishes(true);
-                fishesRight = GenerateFishes(false);
-                bubbles = GenerateBubbles();
-                seaPlants = GenerateSeaPlants(BottomBuffer);
-                DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants);
-            }
-            else
-            {
-                UpdateAndRedrawFishes(fishesLeft, true);
-                UpdateAndRedrawFishes(fishesRight, false);
-                UpdateAndRedrawBubbles(bubbles);
-                DrawSeaPlants(seaPlants);
+                continue; // don't execute the function if the console is too small
             }
 
-            Thread.Sleep(50);
+            try
+            {
+                if (WindowWidth != Console.WindowWidth || WindowHeight != Console.WindowHeight)
+                {
+                    WindowWidth = Console.WindowWidth;
+                    WindowHeight = Console.WindowHeight;
+                    SeaFloorDrawn = false; // reset SeaFloorDrawn flag
+                    fishesLeft = GenerateFishes(true);
+                    fishesRight = GenerateFishes(false);
+                    bubbles = GenerateBubbles();
+                    seaPlants = GenerateSeaPlants(BottomBuffer);
+                    DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants);
+                }
+                else
+                {
+                    UpdateAndRedrawFishes(fishesLeft, true);
+                    UpdateAndRedrawFishes(fishesRight, false);
+                    UpdateAndRedrawBubbles(bubbles);
+                    DrawSeaPlants(seaPlants);
+                }
+
+                Thread.Sleep(50);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // The console window was probably resized to a very small size
+                continue; // skip this iteration of the loop
+            }
+            catch (IOException)
+            {
+                // The console window was probably resized to zero size
+                continue; // skip this iteration of the loop
+            }
         }
     }
 
