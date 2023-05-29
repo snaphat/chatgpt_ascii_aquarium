@@ -8,7 +8,8 @@ class Program
     private const int BorderBuffer = 2;
     private const int FishBuffer = 12;
     private const int BottomBuffer = 7;
-
+    private static int WindowWidth = Console.WindowWidth;
+    private static int WindowHeight = Console.WindowHeight;
     private static bool SeaFloorDrawn;
 
     static void Main()
@@ -26,10 +27,24 @@ class Program
 
         while (true)
         {
-            UpdateAndRedrawFishes(fishesLeft, true);
-            UpdateAndRedrawFishes(fishesRight, false);
-            UpdateAndRedrawBubbles(bubbles);
-            DrawSeaPlants(seaPlants);
+            if (WindowWidth != Console.WindowWidth || WindowHeight != Console.WindowHeight)
+            {
+                WindowWidth = Console.WindowWidth;
+                WindowHeight = Console.WindowHeight;
+                SeaFloorDrawn = false; // reset SeaFloorDrawn flag
+                fishesLeft = GenerateFishes(true);
+                fishesRight = GenerateFishes(false);
+                bubbles = GenerateBubbles();
+                seaPlants = GenerateSeaPlants(BottomBuffer);
+                DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants);
+            }
+            else
+            {
+                UpdateAndRedrawFishes(fishesLeft, true);
+                UpdateAndRedrawFishes(fishesRight, false);
+                UpdateAndRedrawBubbles(bubbles);
+                DrawSeaPlants(seaPlants);
+            }
 
             Thread.Sleep(50);
         }
@@ -155,20 +170,19 @@ class Program
 
     static List<Fish> GenerateFishes(bool moveLeft)
     {
-        Random random = new Random();
         List<Fish> fishes = new List<Fish>();
 
         List<string> fishSymbols = moveLeft ? GenerateFishSymbolsLeft() : GenerateFishSymbolsRight();
 
         for (int i = 0; i < 10; i++)
         {
-            int y = random.Next(2, Console.WindowHeight - 7);
-            int x = random.Next(2, Console.WindowWidth - 12);
-            string fishSymbol = fishSymbols[random.Next(0, fishSymbols.Count)];
-            ConsoleColor color = (ConsoleColor)random.Next(1, 16);
-            int speed = random.Next(1, 4);
-            int bobRange = random.Next(1, 4);
-            int amplitude = random.Next(1, 4);
+            int y = Random.Next(2, Console.WindowHeight - 7);
+            int x = Random.Next(2, Console.WindowWidth - 12);
+            string fishSymbol = fishSymbols[Random.Next(0, fishSymbols.Count)];
+            ConsoleColor color = (ConsoleColor)Random.Next(1, 16);
+            int speed = Random.Next(1, 4);
+            int bobRange = Random.Next(1, 4);
+            int amplitude = Random.Next(1, 4);
             Fish fish = new Fish(fishSymbol, x, y, color, speed, bobRange, amplitude);
             fishes.Add(fish);
         }
@@ -208,16 +222,15 @@ class Program
 
     static List<Bubble> GenerateBubbles()
     {
-        Random random = new Random();
         List<Bubble> bubbles = new List<Bubble>();
 
         for (int i = 0; i < 30; i++)
         {
-            int x = random.Next(2, Console.WindowWidth - 2);
+            int x = Random.Next(2, Console.WindowWidth - 2);
             // Make sure the bubbles start above the sea floor
-            int y = random.Next(2, Console.WindowHeight - BottomBuffer - 1);
+            int y = Random.Next(2, Console.WindowHeight - BottomBuffer - 1);
             string bubbleSymbol = GenerateBubbleSymbol();
-            ConsoleColor color = (ConsoleColor)random.Next(1, 16);
+            ConsoleColor color = (ConsoleColor)Random.Next(1, 16);
             Bubble bubble = new Bubble(x, y, bubbleSymbol, color, BottomBuffer);
             bubbles.Add(bubble);
         }
@@ -227,13 +240,12 @@ class Program
 
     static List<SeaPlant> GenerateSeaPlants(int bottomBuffer)
     {
-        Random random = new Random();
         List<SeaPlant> seaPlants = new List<SeaPlant>();
         int seaFloorStart = Console.WindowHeight - bottomBuffer;
 
-        for (int i = 0; i < Console.WindowWidth; i += random.Next(2, 10))
+        for (int i = 0; i < Console.WindowWidth; i += Random.Next(2, 10))
         {
-            int plantHeight = random.Next(2, 7);
+            int plantHeight = Random.Next(2, 7);
             seaPlants.Add(new SeaPlant(i, seaFloorStart, plantHeight));
         }
 
