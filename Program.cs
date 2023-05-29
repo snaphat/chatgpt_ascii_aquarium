@@ -54,19 +54,23 @@ class Program
     {
         if (!SeaFloorDrawn)
         {
-            int seaFloorStart = Console.WindowHeight - BottomBuffer;
+            int seaFloorStart = Math.Max(Math.Min(Console.WindowHeight - BottomBuffer, Console.WindowHeight - 1), 0);
 
-            for (int i = 0; i < Console.WindowWidth; i++)
+            for (int i = 0; i < Math.Min(Console.WindowWidth, Console.BufferWidth); i++)
             {
                 Console.SetCursorPosition(i, seaFloorStart);
                 Console.Write("~");
             }
 
-            for (int i = 0; i < Console.WindowWidth; i++)
+            for (int i = 0; i < Math.Min(Console.WindowWidth, Console.BufferWidth); i++)
             {
-                for (int j = seaFloorStart + 1; j < Console.WindowHeight; j++)
+                for (int j = seaFloorStart + 1; j < Math.Min(Console.WindowHeight, Console.BufferHeight); j++)
                 {
-                    Console.SetCursorPosition(i, j);
+                    // Make sure 'i' and 'j' are within the current console window width and height
+                    int safeI = Math.Min(i, Console.WindowWidth - 1);
+                    int safeJ = Math.Min(j, Console.WindowHeight - 1);
+
+                    Console.SetCursorPosition(safeI, safeJ);
                     Console.Write(Random.Next(0, 3) > 0 ? "'" : ".");
                 }
             }
@@ -97,23 +101,13 @@ class Program
 
     static void ClearAtPosition(int x, int y, int length)
     {
-        int seaFloorStart = Console.WindowHeight - BottomBuffer;
         for (int i = 0; i < length; i++)
         {
-            if (y < seaFloorStart)
-            {
-                Console.SetCursorPosition(x + i, y);
-                Console.Write(' ');
-            }
-            else if (y == seaFloorStart)
-            {
-                // If on the sea floor, don't clear '|'
-                if (Console.CursorLeft != '|')
-                {
-                    Console.SetCursorPosition(x + i, y);
-                    Console.Write(' ');
-                }
-            }
+            int safeX = Math.Max(0, Math.Min(Console.WindowWidth - 1, x + i));
+            int safeY = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
+
+            Console.SetCursorPosition(safeX, safeY);
+            Console.Write(' ');
         }
     }
 
@@ -123,9 +117,12 @@ class Program
         {
             for (int j = 0; j < seaPlant.Height; j++)
             {
-                Console.SetCursorPosition(seaPlant.X, seaPlant.Y - j);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("|");
+                if (seaPlant.X < Console.WindowWidth && seaPlant.Y - j < Console.WindowHeight && seaPlant.Y - j >= 0)
+                {
+                    Console.SetCursorPosition(seaPlant.X, seaPlant.Y - j);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write("|");
+                }
             }
         }
     }
@@ -133,16 +130,25 @@ class Program
     static void DrawFish(Fish fish)
     {
         int y = Math.Max(0, Math.Min(Console.WindowHeight - 1, fish.Y)); // Ensure Y coordinate is within valid range
-        Console.SetCursorPosition(fish.X, y);
-        Console.ForegroundColor = fish.Color;
-        Console.Write(fish.Symbol);
+        int x = Math.Max(0, fish.X); // Ensure X coordinate is non-negative
+        if (x < Console.WindowWidth && y < Console.WindowHeight)
+        {
+            Console.SetCursorPosition(x, y);
+            Console.ForegroundColor = fish.Color;
+            Console.Write(fish.Symbol);
+        }
     }
 
     static void DrawBubble(Bubble bubble)
     {
-        Console.SetCursorPosition(bubble.X, bubble.Y);
-        Console.ForegroundColor = bubble.Color;
-        Console.Write(bubble.Symbol);
+        int x = Math.Max(0, bubble.X); // Ensure X coordinate is non-negative
+        int y = Math.Max(0, bubble.Y); // Ensure Y coordinate is non-negative
+        if (x < Console.WindowWidth && y < Console.WindowHeight)
+        {
+            Console.SetCursorPosition(x, y);
+            Console.ForegroundColor = bubble.Color;
+            Console.Write(bubble.Symbol);
+        }
     }
 
     static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants)
@@ -176,8 +182,8 @@ class Program
 
         for (int i = 0; i < 10; i++)
         {
-            int y = Random.Next(2, Console.WindowHeight - 7);
-            int x = Random.Next(2, Console.WindowWidth - 12);
+            int y = Random.Next(2, Math.Max(2, Console.WindowHeight - 7));
+            int x = Random.Next(2, Math.Max(2, Console.WindowWidth - 12));
             string fishSymbol = fishSymbols[Random.Next(0, fishSymbols.Count)];
             ConsoleColor color = (ConsoleColor)Random.Next(1, 16);
             int speed = Random.Next(1, 4);
@@ -227,8 +233,11 @@ class Program
         for (int i = 0; i < 30; i++)
         {
             int x = Random.Next(2, Console.WindowWidth - 2);
+
             // Make sure the bubbles start above the sea floor
-            int y = Random.Next(2, Console.WindowHeight - BottomBuffer - 1);
+            int minY = Math.Max(2, Console.WindowHeight - BottomBuffer - 1);
+            int y = Random.Next(2, minY);
+
             string bubbleSymbol = GenerateBubbleSymbol();
             ConsoleColor color = (ConsoleColor)Random.Next(1, 16);
             Bubble bubble = new Bubble(x, y, bubbleSymbol, color, BottomBuffer);
