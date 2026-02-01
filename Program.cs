@@ -26,8 +26,11 @@ class Program
         List<Jellyfish> jellyfishList = GenerateJellyfish();
         List<Crab> crabs = GenerateCrabs(BottomBuffer);
         TreasureChest treasureChest = GenerateTreasureChest(BottomBuffer);
+        Submarine submarine = GenerateSubmarine();
+        List<Starfish> starfishList = GenerateStarfish(BottomBuffer);
+        Shark shark = GenerateShark();
 
-        DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle, jellyfishList, crabs, treasureChest);
+        DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle, jellyfishList, crabs, treasureChest, submarine, starfishList, shark);
 
         while (true)
         {
@@ -51,7 +54,10 @@ class Program
                     jellyfishList = GenerateJellyfish();
                     crabs = GenerateCrabs(BottomBuffer);
                     treasureChest = GenerateTreasureChest(BottomBuffer);
-                    DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle, jellyfishList, crabs, treasureChest);
+                    submarine = GenerateSubmarine();
+                    starfishList = GenerateStarfish(BottomBuffer);
+                    shark = GenerateShark();
+                    DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle, jellyfishList, crabs, treasureChest, submarine, starfishList, shark);
                 }
                 else
                 {
@@ -60,10 +66,15 @@ class Program
                     UpdateAndRedrawBubbles(bubbles);
                     UpdateAndRedrawJellyfish(jellyfishList);
                     UpdateAndRedrawCrabs(crabs);
+                    UpdateAndRedrawSubmarine(submarine);
+                    shark.Clear();
+                    shark.Update();
+                    shark.Draw();
                     treasureChest.Update(bubbles);
                     treasureChest.Draw();
                     DrawCastle(castle);
                     DrawSeaPlants(seaPlants);
+                    foreach (var s in starfishList) s.Draw();
                 }
 
                 Thread.Sleep(50);
@@ -94,6 +105,37 @@ class Program
         {
             // Ignore if still out of range due to race condition
         }
+    }
+
+    public static void SafeDrawString(string text, int x, int y, ConsoleColor color)
+    {
+        if (y < 0 || y >= Console.WindowHeight) return;
+
+        int drawX = x;
+        string visiblePart = text;
+
+        if (drawX < 0)
+        {
+            if (Math.Abs(drawX) >= text.Length) return;
+            visiblePart = text.Substring(Math.Abs(drawX));
+            drawX = 0;
+        }
+
+        if (drawX + visiblePart.Length > Console.WindowWidth)
+        {
+            int length = Console.WindowWidth - drawX;
+            if (length <= 0) return;
+            visiblePart = visiblePart.Substring(0, length);
+        }
+
+        SafeSetCursorPosition(drawX, y);
+        Console.ForegroundColor = color;
+        Console.Write(visiblePart);
+    }
+
+    public static void SafeClearString(int x, int y, int length)
+    {
+        SafeDrawString(new string(' ', length), x, y, Console.ForegroundColor);
     }
 
     static void DrawSeaFloor()
@@ -129,7 +171,7 @@ class Program
     {
         foreach (Fish fish in fishes)
         {
-            ClearAtPosition(fish.X, fish.Y, fish.Symbol.Length);
+            SafeClearString(fish.X, fish.Y, fish.Symbol.Length);
             fish.Move(moveLeft);
             DrawFish(fish);
         }
@@ -139,7 +181,7 @@ class Program
     {
         foreach (Bubble bubble in bubbles)
         {
-            ClearAtPosition(bubble.X, bubble.Y, bubble.Symbol.Length);
+            SafeClearString(bubble.X, bubble.Y, bubble.Symbol.Length);
             bubble.Rise();
             DrawBubble(bubble);
         }
@@ -147,14 +189,7 @@ class Program
 
     static void ClearAtPosition(int x, int y, int length)
     {
-        for (int i = 0; i < length; i++)
-        {
-            int safeX = Math.Max(0, Math.Min(Console.WindowWidth - 1, x + i));
-            int safeY = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
-
-            SafeSetCursorPosition(safeX, safeY);
-            Console.Write(' ');
-        }
+        SafeClearString(x, y, length);
     }
 
     static void DrawSeaPlants(List<SeaPlant> seaPlants)
@@ -163,42 +198,22 @@ class Program
         {
             for (int j = 0; j < seaPlant.Height; j++)
             {
-                if (seaPlant.X < Console.WindowWidth && seaPlant.Y - j < Console.WindowHeight && seaPlant.Y - j >= 0)
-                {
-                    SafeSetCursorPosition(seaPlant.X, seaPlant.Y - j);
-                    Console.ForegroundColor = seaPlant.Color;
-                    // Make it wavy
-                    Console.Write(j % 2 == 0 ? "(" : ")");
-                }
+                SafeDrawString(j % 2 == 0 ? "(" : ")", seaPlant.X, seaPlant.Y - j, seaPlant.Color);
             }
         }
     }
 
     static void DrawFish(Fish fish)
     {
-        int y = Math.Max(0, Math.Min(Console.WindowHeight - 1, fish.Y)); // Ensure Y coordinate is within valid range
-        int x = Math.Max(0, fish.X); // Ensure X coordinate is non-negative
-        if (x < Console.WindowWidth && y < Console.WindowHeight)
-        {
-            SafeSetCursorPosition(x, y);
-            Console.ForegroundColor = fish.Color;
-            Console.Write(fish.Symbol);
-        }
+        SafeDrawString(fish.Symbol, fish.X, fish.Y, fish.Color);
     }
 
     static void DrawBubble(Bubble bubble)
     {
-        int x = Math.Max(0, bubble.X); // Ensure X coordinate is non-negative
-        int y = Math.Max(0, bubble.Y); // Ensure Y coordinate is non-negative
-        if (x < Console.WindowWidth && y < Console.WindowHeight)
-        {
-            SafeSetCursorPosition(x, y);
-            Console.ForegroundColor = bubble.Color;
-            Console.Write(bubble.Symbol);
-        }
+        SafeDrawString(bubble.Symbol, bubble.X, bubble.Y, bubble.Color);
     }
 
-    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants, Castle castle, List<Jellyfish> jellyfishList, List<Crab> crabs, TreasureChest treasureChest)
+    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants, Castle castle, List<Jellyfish> jellyfishList, List<Crab> crabs, TreasureChest treasureChest, Submarine submarine, List<Starfish> starfishList, Shark shark)
     {
         Console.Clear();
 
@@ -223,21 +238,24 @@ class Program
         
         foreach (var jelly in jellyfishList)
         {
-             SafeSetCursorPosition(jelly.X, jelly.Y);
-             Console.ForegroundColor = ConsoleColor.Magenta;
-             Console.Write(jelly.Symbol);
-             SafeSetCursorPosition(jelly.X, jelly.Y + 1);
-             Console.Write(jelly.Tentacles);
+             SafeDrawString(jelly.Symbol, jelly.X, jelly.Y, ConsoleColor.Magenta);
+             SafeDrawString(jelly.Tentacles, jelly.X, jelly.Y + 1, ConsoleColor.Magenta);
         }
 
         foreach (var crab in crabs)
         {
-            SafeSetCursorPosition(crab.X, crab.Y);
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write(crab.Symbol);
+            SafeDrawString(crab.Symbol, crab.X, crab.Y, ConsoleColor.Red);
         }
 
         treasureChest.Draw();
+
+        for (int i = 0; i < submarine.Design.Length; i++)
+        {
+            SafeDrawString(submarine.Design[i], submarine.X, submarine.Y + i, submarine.Colors[i]);
+        }
+
+        foreach (var s in starfishList) s.Draw();
+        shark.Draw();
     }
 
     static List<Fish> GenerateFishes(bool moveLeft)
@@ -310,13 +328,7 @@ class Program
         if (castle == null) return;
         for (int i = 0; i < castle.Design.Length; i++)
         {
-            int drawY = castle.Y + i;
-            if (drawY < Console.WindowHeight)
-            {
-                SafeSetCursorPosition(castle.X, drawY);
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write(castle.Design[i]);
-            }
+            SafeDrawString(castle.Design[i], castle.X, castle.Y + i, ConsoleColor.Gray);
         }
     }
 
@@ -336,14 +348,10 @@ class Program
     {
         foreach (var jellyfish in jellyfishList)
         {
-            ClearAtPosition(jellyfish.X, jellyfish.Y, 3);
-            ClearAtPosition(jellyfish.X, jellyfish.Y + 1, 3);
+            jellyfish.Clear();
             jellyfish.Move();
-            SafeSetCursorPosition(jellyfish.X, jellyfish.Y);
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.Write(jellyfish.Symbol);
-            SafeSetCursorPosition(jellyfish.X, jellyfish.Y + 1);
-            Console.Write(jellyfish.Tentacles);
+            SafeDrawString(jellyfish.Symbol, jellyfish.X, jellyfish.Y, ConsoleColor.Magenta);
+            SafeDrawString(jellyfish.Tentacles, jellyfish.X, jellyfish.Y + 1, ConsoleColor.Magenta);
         }
     }
 
@@ -363,11 +371,9 @@ class Program
     {
         foreach (var crab in crabs)
         {
-            ClearAtPosition(crab.X, crab.Y, 5);
+            crab.Clear();
             crab.Move();
-            SafeSetCursorPosition(crab.X, crab.Y);
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write(crab.Symbol);
+            SafeDrawString(crab.Symbol, crab.X, crab.Y, ConsoleColor.Red);
         }
     }
 
@@ -376,6 +382,39 @@ class Program
         int x = Random.Next(10, Console.WindowWidth - 20);
         int y = Console.WindowHeight - bottomBuffer; 
         return new TreasureChest(x, y);
+    }
+
+    static Submarine GenerateSubmarine()
+    {
+        return new Submarine(-10, 3);
+    }
+
+    static void UpdateAndRedrawSubmarine(Submarine sub)
+    {
+        sub.Clear();
+        sub.Move();
+        for (int i = 0; i < sub.Design.Length; i++)
+        {
+            SafeDrawString(sub.Design[i], sub.X, sub.Y + i, sub.Colors[i]);
+        }
+    }
+
+    static List<Starfish> GenerateStarfish(int bottomBuffer)
+    {
+        List<Starfish> starfishList = new List<Starfish>();
+        int y = Console.WindowHeight - bottomBuffer + 1;
+        for (int i = 0; i < 5; i++)
+        {
+            int x = Random.Next(5, Console.WindowWidth - 5);
+            int safeY = Random.Next(y, Console.WindowHeight - 1);
+            starfishList.Add(new Starfish(x, safeY, ConsoleColor.Red));
+        }
+        return starfishList;
+    }
+
+    static Shark GenerateShark()
+    {
+        return new Shark(Console.WindowWidth, 10);
     }
 
     static List<Bubble> GenerateBubbles()
@@ -606,6 +645,12 @@ class Jellyfish
             }
         }
     }
+
+    public void Clear()
+    {
+        Program.SafeClearString(X, Y, 3);
+        Program.SafeClearString(X, Y + 1, 3);
+    }
 }
 
 class Crab
@@ -641,6 +686,11 @@ class Crab
             }
         }
     }
+
+    public void Clear()
+    {
+        Program.SafeClearString(X, Y, Symbol.Length + 1);
+    }
 }
 
 class TreasureChest
@@ -674,8 +724,141 @@ class TreasureChest
 
     public void Draw()
     {
+        Program.SafeDrawString(IsOpen ? "[_###_]" : "[_____]", X, Y, ConsoleColor.DarkYellow);
+    }
+}
+
+class Submarine
+{
+    public int X { get; private set; }
+    public int Y { get; }
+    public string[] Design { get; } = {
+        @"   _|_   ",
+        @"  |___|  ",
+        @"<|_____|>",
+        @"  (o)(o) "
+    };
+    public ConsoleColor[] Colors { get; } = {
+        ConsoleColor.Cyan,
+        ConsoleColor.Yellow,
+        ConsoleColor.Yellow,
+        ConsoleColor.DarkGray
+    };
+    private int moveCounter = 0;
+
+    public Submarine(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public void Move()
+    {
+        moveCounter++;
+        if (moveCounter % 5 == 0)
+        {
+            X++;
+            if (X > Console.WindowWidth) X = -15;
+        }
+    }
+
+    public void Clear()
+    {
+        for (int i = 0; i < Design.Length; i++)
+        {
+            Program.SafeClearString(X, Y + i, Design[i].Length);
+        }
+    }
+}
+
+class Starfish
+{
+    public int X { get; }
+    public int Y { get; }
+    public ConsoleColor Color { get; }
+
+    public Starfish(int x, int y, ConsoleColor color)
+    {
+        X = x;
+        Y = y;
+        Color = color;
+    }
+
+    public void Draw()
+    {
         Program.SafeSetCursorPosition(X, Y);
-        Console.ForegroundColor = ConsoleColor.DarkYellow;
-        Console.Write(IsOpen ? "[_###_]" : "[_____]");
+        Console.ForegroundColor = Color;
+        Console.Write("*");
+    }
+}
+
+class Shark
+{
+    public int X { get; private set; }
+    public int Y { get; private set; }
+    public string[] Design { get; } = {
+        @"          /|            ",
+        @"         / |            ",
+        @"        /  |            ",
+        @"  _____/   |__________  ",
+        @" /                    \ ",
+        @"/   O  |||             \",
+        @"\_____________________  \",
+        @"                      \_/"
+    };
+    public ConsoleColor[] Colors { get; } = {
+        ConsoleColor.Gray,
+        ConsoleColor.Gray,
+        ConsoleColor.Gray,
+        ConsoleColor.DarkGray,
+        ConsoleColor.DarkGray,
+        ConsoleColor.DarkGray,
+        ConsoleColor.DarkGray,
+        ConsoleColor.Gray
+    };
+    private bool active = false;
+    private readonly Random Random = new Random();
+
+    public Shark(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public void Update()
+    {
+        if (!active)
+        {
+            if (Random.Next(0, 200) == 0)
+            {
+                active = true;
+                X = Console.WindowWidth;
+                Y = Random.Next(2, Math.Max(2, Console.WindowHeight - 12));
+            }
+        }
+        else
+        {
+            X -= 2;
+            if (X < -30) active = false;
+        }
+    }
+
+    public void Draw()
+    {
+        if (!active) return;
+        for (int i = 0; i < Design.Length; i++)
+        {
+            Program.SafeDrawString(Design[i], X, Y + i, Colors[i]);
+        }
+    }
+
+    public void Clear()
+    {
+        if (!active) return;
+        for (int i = 0; i < Design.Length; i++)
+        {
+            // Clear a slightly larger area to handle the speed of 2
+            Program.SafeClearString(X, Y + i, Design[i].Length + 2);
+        }
     }
 }
