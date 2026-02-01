@@ -23,8 +23,9 @@ class Program
         List<Fish> fishesRight = GenerateFishes(false);
         List<Bubble> bubbles = GenerateBubbles();
         List<SeaPlant> seaPlants = GenerateSeaPlants(BottomBuffer);
+        Castle castle = GenerateCastle();
 
-        DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants);
+        DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle);
 
         while (true)
         {
@@ -44,13 +45,15 @@ class Program
                     fishesRight = GenerateFishes(false);
                     bubbles = GenerateBubbles();
                     seaPlants = GenerateSeaPlants(BottomBuffer);
-                    DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants);
+                    castle = GenerateCastle();
+                    DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle);
                 }
                 else
                 {
                     UpdateAndRedrawFishes(fishesLeft, true);
                     UpdateAndRedrawFishes(fishesRight, false);
                     UpdateAndRedrawBubbles(bubbles);
+                    DrawCastle(castle);
                     DrawSeaPlants(seaPlants);
                 }
 
@@ -139,8 +142,9 @@ class Program
                 if (seaPlant.X < Console.WindowWidth && seaPlant.Y - j < Console.WindowHeight && seaPlant.Y - j >= 0)
                 {
                     Console.SetCursorPosition(seaPlant.X, seaPlant.Y - j);
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("|");
+                    Console.ForegroundColor = seaPlant.Color;
+                    // Make it wavy
+                    Console.Write(j % 2 == 0 ? "(" : ")");
                 }
             }
         }
@@ -170,7 +174,7 @@ class Program
         }
     }
 
-    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants)
+    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants, Castle castle)
     {
         Console.Clear();
 
@@ -190,6 +194,7 @@ class Program
         }
 
         DrawSeaFloor();
+        DrawCastle(castle);
         DrawSeaPlants(seaPlants);
     }
 
@@ -223,6 +228,9 @@ class Program
             @"<====>",
             @"  _><<_ ",
             @"<(0)^^^>",
+            @"<°)))><",
+            @"><>",
+            @"<:::<",
         };
     }
 
@@ -234,6 +242,9 @@ class Program
             @"<====>",
             @" _>><_  ",
             @"<^^^(0)>",
+            @"><(((°>",
+            @"<><",
+            @">:::>",
         };
     }
 
@@ -242,6 +253,28 @@ class Program
         foreach (Fish fish in fishes)
         {
             fish.Move(moveLeft);
+        }
+    }
+
+    static Castle GenerateCastle()
+    {
+        int x = Random.Next(10, Console.WindowWidth - 20);
+        int y = Console.WindowHeight - BottomBuffer - 5; // Adjust based on castle height
+        return new Castle(x, y);
+    }
+
+    static void DrawCastle(Castle castle)
+    {
+        if (castle == null) return;
+        for (int i = 0; i < castle.Design.Length; i++)
+        {
+            int drawY = castle.Y + i;
+            if (drawY < Console.WindowHeight)
+            {
+                Console.SetCursorPosition(castle.X, drawY);
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write(castle.Design[i]);
+            }
         }
     }
 
@@ -270,11 +303,13 @@ class Program
     {
         List<SeaPlant> seaPlants = new List<SeaPlant>();
         int seaFloorStart = Console.WindowHeight - bottomBuffer;
+        ConsoleColor[] plantColors = { ConsoleColor.Green, ConsoleColor.DarkGreen, ConsoleColor.DarkCyan };
 
         for (int i = 0; i < Console.WindowWidth; i += Random.Next(2, 10))
         {
             int plantHeight = Random.Next(2, 7);
-            seaPlants.Add(new SeaPlant(i, seaFloorStart, plantHeight));
+            ConsoleColor color = plantColors[Random.Next(plantColors.Length)];
+            seaPlants.Add(new SeaPlant(i, seaFloorStart, plantHeight, color));
         }
 
         return seaPlants;
@@ -304,12 +339,14 @@ class SeaPlant
     public int X { get; }
     public int Y { get; }
     public int Height { get; }
+    public ConsoleColor Color { get; }
 
-    public SeaPlant(int x, int y, int height)
+    public SeaPlant(int x, int y, int height, ConsoleColor color)
     {
         X = x;
         Y = y;
         Height = height;
+        Color = color;
     }
 }
 
@@ -410,5 +447,26 @@ class Bubble
         {
             Y = Console.WindowHeight - BottomBuffer - 1;
         }
+    }
+}
+
+class Castle
+{
+    public int X { get; }
+    public int Y { get; }
+    public string[] Design { get; }
+
+    public Castle(int x, int y)
+    {
+        X = x;
+        Y = y;
+        Design = new string[]
+        {
+            @"      /^\      ",
+            @"     |   |     ",
+            @"     |   |     ",
+            @"    _|___|_    ",
+            @"   [_______]   "
+        };
     }
 }
