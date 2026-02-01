@@ -24,8 +24,11 @@ class Program
         List<Bubble> bubbles = GenerateBubbles();
         List<SeaPlant> seaPlants = GenerateSeaPlants(BottomBuffer);
         Castle castle = GenerateCastle();
+        List<Jellyfish> jellyfishList = GenerateJellyfish();
+        List<Crab> crabs = GenerateCrabs(BottomBuffer);
+        TreasureChest treasureChest = GenerateTreasureChest(BottomBuffer);
 
-        DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle);
+        DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle, jellyfishList, crabs, treasureChest);
 
         while (true)
         {
@@ -46,13 +49,20 @@ class Program
                     bubbles = GenerateBubbles();
                     seaPlants = GenerateSeaPlants(BottomBuffer);
                     castle = GenerateCastle();
-                    DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle);
+                    jellyfishList = GenerateJellyfish();
+                    crabs = GenerateCrabs(BottomBuffer);
+                    treasureChest = GenerateTreasureChest(BottomBuffer);
+                    DrawAquarium(fishesLeft, fishesRight, bubbles, seaPlants, castle, jellyfishList, crabs, treasureChest);
                 }
                 else
                 {
                     UpdateAndRedrawFishes(fishesLeft, true);
                     UpdateAndRedrawFishes(fishesRight, false);
                     UpdateAndRedrawBubbles(bubbles);
+                    UpdateAndRedrawJellyfish(jellyfishList);
+                    UpdateAndRedrawCrabs(crabs);
+                    treasureChest.Update(bubbles);
+                    treasureChest.Draw();
                     DrawCastle(castle);
                     DrawSeaPlants(seaPlants);
                 }
@@ -174,7 +184,7 @@ class Program
         }
     }
 
-    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants, Castle castle)
+    static void DrawAquarium(List<Fish> fishesLeft, List<Fish> fishesRight, List<Bubble> bubbles, List<SeaPlant> seaPlants, Castle castle, List<Jellyfish> jellyfishList, List<Crab> crabs, TreasureChest treasureChest)
     {
         Console.Clear();
 
@@ -196,6 +206,24 @@ class Program
         DrawSeaFloor();
         DrawCastle(castle);
         DrawSeaPlants(seaPlants);
+        
+        foreach (var jelly in jellyfishList)
+        {
+             Console.SetCursorPosition(jelly.X, jelly.Y);
+             Console.ForegroundColor = ConsoleColor.Magenta;
+             Console.Write(jelly.Symbol);
+             Console.SetCursorPosition(jelly.X, jelly.Y + 1);
+             Console.Write(jelly.Tentacles);
+        }
+
+        foreach (var crab in crabs)
+        {
+            Console.SetCursorPosition(crab.X, crab.Y);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write(crab.Symbol);
+        }
+
+        treasureChest.Draw();
     }
 
     static List<Fish> GenerateFishes(bool moveLeft)
@@ -276,6 +304,64 @@ class Program
                 Console.Write(castle.Design[i]);
             }
         }
+    }
+
+    static List<Jellyfish> GenerateJellyfish()
+    {
+        List<Jellyfish> jellyfishList = new List<Jellyfish>();
+        for (int i = 0; i < 3; i++)
+        {
+            int x = Random.Next(5, Console.WindowWidth - 5);
+            int y = Random.Next(5, Console.WindowHeight - 10);
+            jellyfishList.Add(new Jellyfish(x, y));
+        }
+        return jellyfishList;
+    }
+
+    static void UpdateAndRedrawJellyfish(List<Jellyfish> jellyfishList)
+    {
+        foreach (var jellyfish in jellyfishList)
+        {
+            ClearAtPosition(jellyfish.X, jellyfish.Y, 3);
+            ClearAtPosition(jellyfish.X, jellyfish.Y + 1, 3);
+            jellyfish.Move();
+            Console.SetCursorPosition(jellyfish.X, jellyfish.Y);
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.Write(jellyfish.Symbol);
+            Console.SetCursorPosition(jellyfish.X, jellyfish.Y + 1);
+            Console.Write(jellyfish.Tentacles);
+        }
+    }
+
+    static List<Crab> GenerateCrabs(int bottomBuffer)
+    {
+        List<Crab> crabs = new List<Crab>();
+        int y = Console.WindowHeight - bottomBuffer;
+        for (int i = 0; i < 2; i++)
+        {
+            int x = Random.Next(2, Console.WindowWidth - 10);
+            crabs.Add(new Crab(x, y));
+        }
+        return crabs;
+    }
+
+    static void UpdateAndRedrawCrabs(List<Crab> crabs)
+    {
+        foreach (var crab in crabs)
+        {
+            ClearAtPosition(crab.X, crab.Y, 5);
+            crab.Move();
+            Console.SetCursorPosition(crab.X, crab.Y);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write(crab.Symbol);
+        }
+    }
+
+    static TreasureChest GenerateTreasureChest(int bottomBuffer)
+    {
+        int x = Random.Next(10, Console.WindowWidth - 20);
+        int y = Console.WindowHeight - bottomBuffer; 
+        return new TreasureChest(x, y);
     }
 
     static List<Bubble> GenerateBubbles()
@@ -468,5 +554,114 @@ class Castle
             @"    _|___|_    ",
             @"   [_______]   "
         };
+    }
+}
+
+class Jellyfish
+{
+    public int X { get; private set; }
+    public int Y { get; private set; }
+    public string Symbol { get; } = "(:)";
+    public string Tentacles { get; } = " | ";
+
+    private bool movingUp = true;
+    private int moveCounter = 0;
+    private readonly Random Random = new Random();
+
+    public Jellyfish(int x, int y)
+    {
+        X = x;
+        Y = y;
+        movingUp = Random.Next(0, 2) == 0;
+    }
+
+    public void Move()
+    {
+        moveCounter++;
+        if (moveCounter % 3 == 0) // Move slower than fish
+        {
+            if (movingUp)
+            {
+                Y--;
+                if (Y < 5) movingUp = false;
+            }
+            else
+            {
+                Y++;
+                if (Y > Console.WindowHeight - 10) movingUp = true;
+            }
+        }
+    }
+}
+
+class Crab
+{
+    public int X { get; private set; }
+    public int Y { get; }
+    public string Symbol { get; } = @"(\_/)";
+    private bool movingLeft = true;
+    private int moveCounter = 0;
+    private readonly Random Random = new Random();
+
+    public Crab(int x, int y)
+    {
+        X = x;
+        Y = y;
+        movingLeft = Random.Next(0, 2) == 0;
+    }
+
+    public void Move()
+    {
+        moveCounter++;
+        if (moveCounter % 4 == 0) // Crabs are slow
+        {
+            if (movingLeft)
+            {
+                X--;
+                if (X < 2) movingLeft = false;
+            }
+            else
+            {
+                X++;
+                if (X > Console.WindowWidth - 7) movingLeft = true;
+            }
+        }
+    }
+}
+
+class TreasureChest
+{
+    public int X { get; }
+    public int Y { get; }
+    public bool IsOpen { get; private set; }
+    private int timer = 0;
+    private readonly Random Random = new Random();
+
+    public TreasureChest(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public void Update(List<Bubble> bubbles)
+    {
+        timer++;
+        if (timer > 50 && Random.Next(0, 20) == 0)
+        {
+            IsOpen = !IsOpen;
+            timer = 0;
+        }
+
+        if (IsOpen && timer % 5 == 0)
+        {
+            bubbles.Add(new Bubble(X + 3, Y, "o", ConsoleColor.Yellow, 7));
+        }
+    }
+
+    public void Draw()
+    {
+        Console.SetCursorPosition(X, Y);
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.Write(IsOpen ? "[_###_]" : "[_____]");
     }
 }
