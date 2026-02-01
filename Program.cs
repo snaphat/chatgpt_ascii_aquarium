@@ -82,6 +82,21 @@ class Program
         }
     }
 
+    public static void SafeSetCursorPosition(int left, int top)
+    {
+        try
+        {
+            if (left >= 0 && left < Console.BufferWidth && top >= 0 && top < Console.BufferHeight)
+            {
+                Console.SetCursorPosition(left, top);
+            }
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            // Ignore if still out of range due to race condition
+        }
+    }
+
     static void DrawSeaFloor()
     {
         if (!SeaFloorDrawn)
@@ -90,7 +105,7 @@ class Program
 
             for (int i = 0; i < Math.Min(Console.WindowWidth, Console.BufferWidth); i++)
             {
-                Console.SetCursorPosition(i, seaFloorStart);
+                SafeSetCursorPosition(i, seaFloorStart);
                 Console.Write("~");
             }
 
@@ -102,7 +117,7 @@ class Program
                     int safeI = Math.Min(i, Console.WindowWidth - 1);
                     int safeJ = Math.Min(j, Console.WindowHeight - 1);
 
-                    Console.SetCursorPosition(safeI, safeJ);
+                    SafeSetCursorPosition(safeI, safeJ);
                     Console.Write(Random.Next(0, 3) > 0 ? "'" : ".");
                 }
             }
@@ -138,7 +153,7 @@ class Program
             int safeX = Math.Max(0, Math.Min(Console.WindowWidth - 1, x + i));
             int safeY = Math.Max(0, Math.Min(Console.WindowHeight - 1, y));
 
-            Console.SetCursorPosition(safeX, safeY);
+            SafeSetCursorPosition(safeX, safeY);
             Console.Write(' ');
         }
     }
@@ -151,7 +166,7 @@ class Program
             {
                 if (seaPlant.X < Console.WindowWidth && seaPlant.Y - j < Console.WindowHeight && seaPlant.Y - j >= 0)
                 {
-                    Console.SetCursorPosition(seaPlant.X, seaPlant.Y - j);
+                    SafeSetCursorPosition(seaPlant.X, seaPlant.Y - j);
                     Console.ForegroundColor = seaPlant.Color;
                     // Make it wavy
                     Console.Write(j % 2 == 0 ? "(" : ")");
@@ -166,7 +181,7 @@ class Program
         int x = Math.Max(0, fish.X); // Ensure X coordinate is non-negative
         if (x < Console.WindowWidth && y < Console.WindowHeight)
         {
-            Console.SetCursorPosition(x, y);
+            SafeSetCursorPosition(x, y);
             Console.ForegroundColor = fish.Color;
             Console.Write(fish.Symbol);
         }
@@ -178,7 +193,7 @@ class Program
         int y = Math.Max(0, bubble.Y); // Ensure Y coordinate is non-negative
         if (x < Console.WindowWidth && y < Console.WindowHeight)
         {
-            Console.SetCursorPosition(x, y);
+            SafeSetCursorPosition(x, y);
             Console.ForegroundColor = bubble.Color;
             Console.Write(bubble.Symbol);
         }
@@ -209,16 +224,16 @@ class Program
         
         foreach (var jelly in jellyfishList)
         {
-             Console.SetCursorPosition(jelly.X, jelly.Y);
+             SafeSetCursorPosition(jelly.X, jelly.Y);
              Console.ForegroundColor = ConsoleColor.Magenta;
              Console.Write(jelly.Symbol);
-             Console.SetCursorPosition(jelly.X, jelly.Y + 1);
+             SafeSetCursorPosition(jelly.X, jelly.Y + 1);
              Console.Write(jelly.Tentacles);
         }
 
         foreach (var crab in crabs)
         {
-            Console.SetCursorPosition(crab.X, crab.Y);
+            SafeSetCursorPosition(crab.X, crab.Y);
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Write(crab.Symbol);
         }
@@ -299,7 +314,7 @@ class Program
             int drawY = castle.Y + i;
             if (drawY < Console.WindowHeight)
             {
-                Console.SetCursorPosition(castle.X, drawY);
+                SafeSetCursorPosition(castle.X, drawY);
                 Console.ForegroundColor = ConsoleColor.Gray;
                 Console.Write(castle.Design[i]);
             }
@@ -325,10 +340,10 @@ class Program
             ClearAtPosition(jellyfish.X, jellyfish.Y, 3);
             ClearAtPosition(jellyfish.X, jellyfish.Y + 1, 3);
             jellyfish.Move();
-            Console.SetCursorPosition(jellyfish.X, jellyfish.Y);
+            SafeSetCursorPosition(jellyfish.X, jellyfish.Y);
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.Write(jellyfish.Symbol);
-            Console.SetCursorPosition(jellyfish.X, jellyfish.Y + 1);
+            SafeSetCursorPosition(jellyfish.X, jellyfish.Y + 1);
             Console.Write(jellyfish.Tentacles);
         }
     }
@@ -351,7 +366,7 @@ class Program
         {
             ClearAtPosition(crab.X, crab.Y, 5);
             crab.Move();
-            Console.SetCursorPosition(crab.X, crab.Y);
+            SafeSetCursorPosition(crab.X, crab.Y);
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Write(crab.Symbol);
         }
@@ -660,7 +675,7 @@ class TreasureChest
 
     public void Draw()
     {
-        Console.SetCursorPosition(X, Y);
+        Program.SafeSetCursorPosition(X, Y);
         Console.ForegroundColor = ConsoleColor.DarkYellow;
         Console.Write(IsOpen ? "[_###_]" : "[_____]");
     }
