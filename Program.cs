@@ -16,9 +16,8 @@ class Program
     static void Main()
     {
         Console.CursorVisible = false;
-        Console.WindowHeight = Console.LargestWindowHeight - 10;
-        Console.WindowWidth = Console.LargestWindowWidth - 10;
-
+        // Removed forced resizing to play better with Windows Terminal and other modern terminals
+        
         List<Fish> fishesLeft = GenerateFishes(true);
         List<Fish> fishesRight = GenerateFishes(false);
         List<Bubble> bubbles = GenerateBubbles();
